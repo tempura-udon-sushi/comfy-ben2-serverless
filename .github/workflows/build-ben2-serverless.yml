@@ -1,0 +1,95 @@
+name: Build BEN2 Serverless Worker
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths:
+      - 'Dockerfile.ben2-serverless'
+      - 'ComfyUI/custom_nodes/ComfyUI_BEN2_ONNX/**'
+      - 'ComfyUI/custom_nodes/comfyui-florence2/**'
+      - 'ComfyUI/custom_nodes/ComfyUI_LocalJSONExtractor/**'
+      - 'ComfyUI/user/default/workflows/BG_remove_BEN2_*.json'
+      - '.github/workflows/build-ben2-serverless.yml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag (default: latest)'
+        required: false
+        default: 'latest'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: tempura-udon-sushi/comfyui-ben2-serverless
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels)
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=sha,prefix={{branch}}-
+          type=ref,event=branch
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.ben2-serverless
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64
+
+    - name: Image digest
+      run: echo ${{ steps.meta.outputs.digest }}
+
+    - name: Create deployment summary
+      run: |
+        echo "## 🎉 BEN2 Serverless Worker Built Successfully" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Image Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Registry**: ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image**: ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tags**: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Digest**: ${{ steps.meta.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Deploy to RunPod" >> $GITHUB_STEP_SUMMARY
+        echo "1. Go to RunPod Serverless" >> $GITHUB_STEP_SUMMARY
+        echo "2. Create New Endpoint" >> $GITHUB_STEP_SUMMARY
+        echo "3. Container Image: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
+        echo "4. GPU: RTX 4090 (24GB VRAM)" >> $GITHUB_STEP_SUMMARY
+        echo "5. No network volume needed!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Models Included" >> $GITHUB_STEP_SUMMARY
+        echo "- BEN2_Base.onnx (~223 MB)" >> $GITHUB_STEP_SUMMARY
+        echo "- Florence-2-base (~230 MB)" >> $GITHUB_STEP_SUMMARY
+        echo "- NudeNet (~100 MB)" >> $GITHUB_STEP_SUMMARY
+        echo "- Llama-3.1-8B-Q5_K_M (~5.4 GB)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Total Image Size**: ~9-10 GB" >> $GITHUB_STEP_SUMMARY

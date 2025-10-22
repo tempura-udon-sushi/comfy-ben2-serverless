@@ -1,0 +1,92 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv
+ENV/
+
+# ComfyUI Runtime (exclude large runtime files)
+ComfyUI/output/
+ComfyUI/input/
+ComfyUI/temp/
+
+# Models (we download these in Dockerfile, don't commit)
+*.safetensors
+*.ckpt
+*.pth
+*.onnx
+*.gguf
+*.bin
+ComfyUI/models/checkpoints/
+ComfyUI/models/vae/
+ComfyUI/models/clip/
+ComfyUI/models/diffusion_models/
+ComfyUI/models/text_encoders/
+ComfyUI/models/upscale_models/
+ComfyUI/models/loras/
+ComfyUI/models/controlnet/
+ComfyUI/models/ben2_onnx/*.onnx
+ComfyUI/models/llm/*.gguf
+ComfyUI/models/LLM/models--*
+ComfyUI/models/birefnet_onnx/
+
+# Keep directory structure
+!**/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+
+# Temporary
+*.tmp
+tmp/
+temp/
+
+# Test files
+analyze_workflows.py
+test_*.py
+
+# Large images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+input.png
+
+# Backup
+*.bak
+*.backup
+.cleanup_backup/
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+*.tar
+*.zip
+dist/
+build/
+
+# Old FLUX experiment docs (contains secrets)
+.memo/FromMac_20251023/

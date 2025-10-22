@@ -1,0 +1,122 @@
+# Docker build context exclusions for BEN2 Serverless Worker
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+README*
+LICENSE
+.memo/
+docs/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# ComfyUI runtime files (we only need the structure, not runtime data)
+ComfyUI/output/
+ComfyUI/input/
+ComfyUI/temp/
+ComfyUI/models/checkpoints/
+ComfyUI/models/vae/
+ComfyUI/models/clip/
+ComfyUI/models/diffusion_models/
+ComfyUI/models/text_encoders/
+ComfyUI/models/upscale_models/
+ComfyUI/models/loras/
+ComfyUI/models/controlnet/
+ComfyUI/models/unet/
+
+# Keep only specific model directories we need (empty, will be populated in Dockerfile)
+!ComfyUI/models/ben2_onnx/.gitkeep
+!ComfyUI/models/llm/.gitkeep
+!ComfyUI/models/LLM/.gitkeep
+
+# Exclude custom nodes we don't need
+ComfyUI/custom_nodes/.disabled/
+ComfyUI/custom_nodes/ComfyUI-NormalCrafterWrapper/
+ComfyUI/custom_nodes/ComfyUI_Qwen2_5-VL-Instruct/
+ComfyUI/custom_nodes/comfyui-manager/
+ComfyUI/custom_nodes/comfyui_essentials/
+ComfyUI/custom_nodes/comfyui_ipadapter_plus/
+ComfyUI/custom_nodes/comfyui_layerstyle/
+ComfyUI/custom_nodes/dynamic_prompt_builder/
+ComfyUI/custom_nodes/rgthree-comfy/
+ComfyUI/custom_nodes/comfyui-logicutils/
+
+# Exclude workflows we don't need (keep only BEN2 workflows)
+ComfyUI/user/default/workflows/*
+!ComfyUI/user/default/workflows/BG_remove_BEN2_simple_1st.json
+!ComfyUI/user/default/workflows/BG_remove_BEN2_simple_2nd.json
+
+# Build artifacts
+*.tar
+*.zip
+*.onnx.download
+*.safetensors.download
+
+# Test files
+test/
+tests/
+*_test.py
+test_*.py
+analyze_workflows.py
+
+# Environment files
+.env
+.env.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup files
+*.bak
+*.backup
+.cleanup_backup/
+
+# CI/CD (we'll add these back specifically if needed)
+.github/
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Large files we'll download during build
+*.gguf
+BEN2_Base.onnx
+
+# Scripts we don't need in the image
+build-*.sh
+build-*.ps1
+start_comfyui.bat
+start_comfyui.sh
+
+# Input images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+input.png
