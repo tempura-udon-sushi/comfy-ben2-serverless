@@ -52,10 +52,8 @@ RUN pip install --no-cache-dir -r /comfyui/custom_nodes/ComfyUI_BEN2_ONNX/requir
 RUN pip install --no-cache-dir -r /comfyui/custom_nodes/comfyui-florence2/requirements.txt
 
 # Install llama-cpp-python with CUDA support (for RTX GPUs)
-# Using prebuilt wheels from jllllll's repository
-RUN pip install --no-cache-dir llama-cpp-python>=0.2.26 \
-    --prefer-binary \
-    --extra-index-url https://jllllll.github.io/llama-cpp-python-cuBLAS-wheels/AVX2/cu121
+# Try CUDA wheel first, fallback to CPU if unavailable
+RUN pip install --no-cache-dir llama-cpp-python>=0.2.26 --prefer-binary --extra-index-url https://jllllll.github.io/llama-cpp-python-cuBLAS-wheels/AVX2/cu122 || pip install --no-cache-dir llama-cpp-python>=0.2.26
 
 # Install NudeNet for safety checking
 RUN pip install --no-cache-dir nudenet
