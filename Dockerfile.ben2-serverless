@@ -86,7 +86,7 @@ RUN pip install -U "huggingface_hub[cli]"
 
 # Download BEN2 ONNX model (~223 MB)
 RUN echo "Downloading BEN2_Base.onnx..." && \
-    huggingface-cli download PramaLLC/BEN2 \
+    hf download PramaLLC/BEN2 \
     --include "BEN2_Base.onnx" \
     --local-dir /comfyui/models/ben2_onnx && \
     echo "BEN2 model downloaded successfully"
@@ -94,24 +94,18 @@ RUN echo "Downloading BEN2_Base.onnx..." && \
 # Download Llama 3.1 8B Instruct GGUF (~5.4 GB)
 # Using Q5_K_M quantization for best quality/size balance
 RUN echo "Downloading Llama-3.1-8B-Instruct-Q5_K_M.gguf..." && \
-    huggingface-cli download bartowski/Meta-Llama-3.1-8B-Instruct-GGUF \
+    hf download bartowski/Meta-Llama-3.1-8B-Instruct-GGUF \
     --include "Meta-Llama-3.1-8B-Instruct-Q5_K_M.gguf" \
     --local-dir /comfyui/models/llm && \
     echo "Llama 3.1 model downloaded successfully"
 
-# Pre-download Florence-2-base model using transformers
-# This caches the model so it doesn't download on first use
+# Pre-download Florence-2-base model files (download only, don't instantiate)
+# Model will load properly at runtime by the custom node
 RUN echo "Pre-downloading Florence-2-base model..." && \
-    python3 -c "from transformers import AutoModelForCausalLM, AutoProcessor; \
-    print('Downloading Florence-2-base...'); \
-    model = AutoModelForCausalLM.from_pretrained('microsoft/Florence-2-base', \
-        trust_remote_code=True, \
-        cache_dir='/comfyui/models/LLM'); \
-    processor = AutoProcessor.from_pretrained('microsoft/Florence-2-base', \
-        trust_remote_code=True, \
-        cache_dir='/comfyui/models/LLM'); \
-    print('Florence-2-base downloaded and cached')" && \
-    echo "Florence-2 model cached successfully"
+    hf download microsoft/Florence-2-base \
+    --local-dir /comfyui/models/LLM/models--microsoft--Florence-2-base/snapshots/main \
+    --cache-dir /comfyui/models/LLM && \
+    echo "Florence-2 model files downloaded successfully"
 
 # Pre-trigger NudeNet model download
 # NudeNet auto-downloads on first use, so we'll trigger it during build
