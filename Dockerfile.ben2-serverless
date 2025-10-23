@@ -122,7 +122,9 @@ RUN echo "Pre-downloading NudeNet model..." && \
 
 RUN echo "Verifying all models are present..." && \
     ls -lh /comfyui/models/ben2_onnx/BEN2_Base.onnx && \
-    ls -lh /comfyui/models/llm/Llama-3.1-8B-Instruct-Q5_K_M.gguf && \
+    echo "Checking llm directory structure:" && \
+    find /comfyui/models/llm -name "*.gguf" -type f && \
+    ls -lh /comfyui/models/llm/*.gguf && \
     echo "Model verification complete"
 
 # Display total model sizes
