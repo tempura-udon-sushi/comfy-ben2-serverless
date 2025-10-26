@@ -2,8 +2,11 @@
 
 ✅ **Fast CPU-based background removal** using BiRefNet ONNX models on RunPod.
 
-**Model**: BiRefNet ONNX (Bilateral Reference Network)
+**Model**: BiRefNet ONNX (Bilateral Reference Network)  
+**Version**: v1.1-cpu (Oct 26, 2025)  
 **Purpose**: Production-ready background removal without GPU costs
+
+**Latest Update**: Fixed ONNX Runtime pthread errors - see [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -44,14 +47,14 @@
 cd birefnet-serverless-cpu
 
 # Build
-docker build -f Dockerfile -t birefnet-serverless-cpu:v1.0 ..
+docker build -f Dockerfile -t birefnet-serverless-cpu:v1.1-cpu ..
 
 # Tag for Docker Hub
-docker tag birefnet-serverless-cpu:v1.0 YOUR_USERNAME/birefnet-serverless-cpu:v1.0
-docker tag birefnet-serverless-cpu:v1.0 YOUR_USERNAME/birefnet-serverless-cpu:latest
+docker tag birefnet-serverless-cpu:v1.1-cpu YOUR_USERNAME/birefnet-serverless-cpu:v1.1-cpu
+docker tag birefnet-serverless-cpu:v1.1-cpu YOUR_USERNAME/birefnet-serverless-cpu:latest
 
 # Push
-docker push YOUR_USERNAME/birefnet-serverless-cpu:v1.0
+docker push YOUR_USERNAME/birefnet-serverless-cpu:v1.1-cpu
 docker push YOUR_USERNAME/birefnet-serverless-cpu:latest
 ```
 
@@ -63,7 +66,7 @@ docker push YOUR_USERNAME/birefnet-serverless-cpu:latest
 4. Configuration:
    - **Name**: `birefnet-cpu`
    - **Instance**: 4-8 vCPUs, 8-16 GB RAM
-   - **Container Image**: `YOUR_USERNAME/birefnet-serverless-cpu:v1.0`
+   - **Container Image**: `zerocalory/birefnet-serverless-cpu:v1.1-cpu`
    - **Container Disk**: 10 GB
 5. Deploy!
 
@@ -276,6 +279,7 @@ For high-volume or real-time needs, consider the GPU version.
 
 ---
 
-**Built with**: Oct 26, 2025
-**Version**: 1.0-cpu
-**Status**: ✅ Ready to deploy
+**Built with**: Oct 26, 2025  
+**Version**: v1.1-cpu  
+**Docker Image**: `zerocalory/birefnet-serverless-cpu:v1.1-cpu`  
+**Status**: ✅ Production Ready (pthread errors fixed)
