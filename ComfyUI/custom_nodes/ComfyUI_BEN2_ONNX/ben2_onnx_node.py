@@ -80,8 +80,16 @@ class BEN2_ONNX_RemoveBg:
             
             providers = providers_map.get(provider, ["CPUExecutionProvider"])
             
+            # Create session options with explicit thread settings
+            # This prevents pthread_setaffinity_np errors on containers with limited CPUs
+            sess_options = onnxruntime.SessionOptions()
+            sess_options.intra_op_num_threads = int(os.environ.get('OMP_NUM_THREADS', '8'))
+            sess_options.inter_op_num_threads = int(os.environ.get('OMP_NUM_THREADS', '8'))
+            sess_options.execution_mode = onnxruntime.ExecutionMode.ORT_SEQUENTIAL
+            
             print(f"Loading BEN2 ONNX model from {model_path} with providers: {providers}")
-            self.session = onnxruntime.InferenceSession(model_path, providers=providers)
+            print(f"Thread settings: intra={sess_options.intra_op_num_threads}, inter={sess_options.inter_op_num_threads}")
+            self.session = onnxruntime.InferenceSession(model_path, sess_options=sess_options, providers=providers)
             self.model_path = model_path
     
     def tensor2pil(self, image):
