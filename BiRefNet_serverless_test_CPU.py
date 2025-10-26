@@ -69,11 +69,31 @@ print("\nSending request to RunPod CPU endpoint...")
 print(f"Endpoint: {ENDPOINT_URL}")
 
 try:
+    # Validate credentials first
+    if "YOUR_ENDPOINT_ID" in ENDPOINT_URL or "YOUR_RUNPOD_API_KEY" in API_KEY:
+        print("\n❌ Error: Please update ENDPOINT_URL and API_KEY with your actual values!")
+        print("\n📝 How to fix:")
+        print("  1. Get your API key from: https://www.runpod.io/console/user/settings")
+        print("  2. Get your endpoint ID from: https://www.runpod.io/console/serverless")
+        print("  3. Update lines 8-9 in this file")
+        exit(1)
+    
     # Use /run endpoint for async execution
     async_endpoint = ENDPOINT_URL.replace("/runsync", "/run")
     response = requests.post(async_endpoint, json=payload, headers=headers, timeout=30)
     print(f"\n✓ Job submitted!")
     print(f"Status Code: {response.status_code}")
+    
+    # Handle authentication errors
+    if response.status_code == 401:
+        print(f"\n❌ Authentication failed!")
+        print(f"   - Check your API key is correct")
+        print(f"   - Get it from: https://www.runpod.io/console/user/settings")
+        exit(1)
+    
+    if response.status_code != 200:
+        print(f"\n❌ Request failed: {response.text}")
+        exit(1)
     
     result = response.json()
     job_id = result.get("id")
@@ -87,9 +107,12 @@ try:
     import time
     max_wait = 180  # 3 minutes total
     max_queue_time = 60  # Max time in queue before warning
+    max_progress_time = 90  # Max time in IN_PROGRESS before considering stuck (BiRefNet takes ~15s)
     start_time = time.time()
     queue_start_time = None
+    progress_start_time = None
     last_status = None
+    status_change_count = 0
     
     while time.time() - start_time < max_wait:
         time.sleep(5)
@@ -109,22 +132,70 @@ try:
         status = status_result.get("status")
         elapsed = int(time.time() - start_time)
         
+        # Track status changes
+        if status != last_status:
+            status_change_count += 1
+        
         # Track queue time
         if status == "IN_QUEUE":
             if queue_start_time is None:
                 queue_start_time = time.time()
             queue_time = int(time.time() - queue_start_time)
             
+            # Reset progress timer
+            progress_start_time = None
+            
             # Warn if stuck in queue too long
             if queue_time > max_queue_time:
                 print(f"  [{elapsed}s] ⚠️  Status: {status} (queued for {queue_time}s - worker may be scaling)")
             else:
                 print(f"  [{elapsed}s] Status: {status}")
+        
+        # Track IN_PROGRESS time to detect stuck jobs
+        elif status == "IN_PROGRESS":
+            if progress_start_time is None:
+                progress_start_time = time.time()
+                # Show queue time when starting progress
+                if queue_start_time:
+                    queue_duration = int(time.time() - queue_start_time)
+                    print(f"  [{elapsed}s] ✓ Worker started after {queue_duration}s in queue")
+                    queue_start_time = None
+            
+            progress_time = int(time.time() - progress_start_time)
+            
+            # Check for stuck job (normal BiRefNet execution is 12-15s, warn after 90s)
+            if progress_time > max_progress_time:
+                print(f"  [{elapsed}s] 🚨 STUCK: IN_PROGRESS for {progress_time}s (expected ~15s)")
+                print(f"       This indicates a desync between client and server")
+                print(f"       Cancelling and exiting...")
+                
+                # Try to cancel the stuck job
+                try:
+                    cancel_response = requests.post(f"{status_endpoint}/cancel", headers=headers, timeout=5)
+                    if cancel_response.status_code == 200:
+                        print(f"       ✓ Job cancelled")
+                except:
+                    pass
+                
+                print(f"\n💡 Recommendation:")
+                print(f"   - Check RunPod console for actual job status")
+                print(f"   - Job may have completed but status update failed")
+                print(f"   - Try again with fewer concurrent requests")
+                break
+            elif progress_time > 30:
+                # Warn after 30s (2x normal time)
+                print(f"  [{elapsed}s] ⚠️  Status: {status} (processing for {progress_time}s, expected ~15s)")
+            else:
+                print(f"  [{elapsed}s] Status: {status}")
+        
         else:
-            # Reset queue timer when status changes
-            if last_status == "IN_QUEUE" and status != "IN_QUEUE":
-                print(f"  [{elapsed}s] ✓ Worker started after {int(time.time() - queue_start_time)}s in queue")
+            # Reset both timers for other statuses
+            if last_status == "IN_QUEUE" and status not in ["IN_QUEUE", "IN_PROGRESS"]:
+                if queue_start_time:
+                    queue_duration = int(time.time() - queue_start_time)
+                    print(f"  [{elapsed}s] ✓ Completed after {queue_duration}s in queue")
             queue_start_time = None
+            progress_start_time = None
             print(f"  [{elapsed}s] Status: {status}")
         
         last_status = status
@@ -166,6 +237,17 @@ try:
             with open(response_file, "w") as f:
                 json.dump(status_result, f, indent=2)
             print(f"\n📄 Response saved to: {response_file}")
+            
+            # Show timing breakdown
+            total_time = time.time() - start_time
+            delay_time = status_result.get("delayTime", 0) / 1000  # Convert ms to seconds
+            execution_time = status_result.get("executionTime", 0) / 1000
+            
+            print(f"\n⏱️  Timing Breakdown:")
+            print(f"   Total time: {total_time:.2f}s")
+            print(f"   Queue time: {delay_time:.2f}s")
+            print(f"   Execution time: {execution_time:.2f}s")
+            print(f"   Status changes: {status_change_count}")
             
             break
         
